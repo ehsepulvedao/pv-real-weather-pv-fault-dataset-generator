@@ -40,14 +40,14 @@ https://github.com/ehsepulvedao/pv-simulink-fault-scenario-models
 The main generator script is:
 
 ```text
-pv_fault_dataset_generator_V6_REALWEATHER_DAILY_FIXEDSEVERITY_QC_IR_BEFORE_RESAMPLING_PROTECTED_SIMULINK_V3.m
+pv_fault_dataset_generator.m
 ```
 
 The script expects a local project structure containing:
 
 ```text
 project_root/
-    pv_fault_dataset_generator_V6_REALWEATHER_DAILY_FIXEDSEVERITY_QC_IR_BEFORE_RESAMPLING_PROTECTED_SIMULINK_V3.m
+    pv_fault_dataset_generator.m
     power_PVarray_250kW_param.m
     Models/
         F0_healthy/
@@ -222,7 +222,7 @@ Only the fault activation time is adapted to the available measured daylight int
 8. Run:
 
 ```matlab
-pv_fault_dataset_generator_V6_REALWEATHER_DAILY_FIXEDSEVERITY_QC_IR_BEFORE_RESAMPLING_PROTECTED_SIMULINK_V3
+pv_fault_dataset_generator
 ```
 
 ## Important configuration variables
@@ -259,7 +259,7 @@ README.md
 LICENSE
 CITATION.cff
 .gitignore
-pv_fault_dataset_generator_V6_REALWEATHER_DAILY_FIXEDSEVERITY_QC_IR_BEFORE_RESAMPLING_PROTECTED_SIMULINK_V3.m
+pv_fault_dataset_generator.m
 docs/
     input_data_requirements.md
     output_dataset_structure.md
