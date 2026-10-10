@@ -31,9 +31,7 @@ This repository does not include:
 
 The MATLAB/Simulink photovoltaic fault scenario models are maintained separately in the model repository:
 
-```text
-https://github.com/ehsepulvedao/pv-simulink-fault-scenario-models
-```
+[https://github.com/ehsepulvedao/pv-simulink-fault-scenario-models](https://github.com/ehsepulvedao/pv-simulink-fault-scenario-models)
 
 ## Main script
 
@@ -84,11 +82,11 @@ Compatibility with older MATLAB releases is not guaranteed.
 
 The generator uses two public Mendeley Data sources:
 
-1. Pamplona, Colombia source dataset  
-   DOI: `10.17632/z9sp7hmg5p.1`
+1. [Pamplona, Colombia source dataset](https://data.mendeley.com/datasets/z9sp7hmg5p/1)  
+   DOI: [`10.17632/z9sp7hmg5p.1`](https://doi.org/10.17632/z9sp7hmg5p.1)
 
-2. Verney, Portugal source dataset  
-   DOI: `10.17632/m26hk4ysvz.1`
+2. [Verney, Portugal source dataset](https://data.mendeley.com/datasets/m26hk4ysvz/1)  
+   DOI: [`10.17632/m26hk4ysvz.1`](https://doi.org/10.17632/m26hk4ysvz.1)
 
 The raw meteorological datasets are not included in this repository. They must be downloaded from their original repositories and placed locally under:
 
