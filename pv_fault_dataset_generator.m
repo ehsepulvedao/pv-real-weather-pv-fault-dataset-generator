@@ -1,13 +1,14 @@
 % =========================================================
 % Author      : Edgar Hernando Sepulveda Oviedo
 % Year        : 2026
-% File        : pv_fault_dataset_generator_V5_REALWEATHER_DAILY_FIXEDSEVERITY_QC_IR_BEFORE_RESAMPLING_PROTECTED_SIMULINK_V3.m
+% File        : pv_fault_dataset_generator.m
+% Version     : 1.0.0
 % Description : Semi-synthetic photovoltaic fault dataset generator using
 %               scenario-based Simulink models and real meteorological
 %               time series from public Mendeley Data datasets.
 %
 % Repository note:
-% This V5 generator processes each meteorological source independently and by
+% This generator processes each meteorological source independently and by
 % real calendar day:
 %
 %   dataset source -> fault scenario -> fault severity experiment -> real measured day
@@ -50,6 +51,31 @@ else
     project_root = fileparts(script_path);
 end
 
+% External Simulink model dependency. By default, the model repository is
+% expected as a sibling of this generator repository. The location can be
+% overridden without editing this script by setting PV_MODEL_REPOSITORY.
+model_repository_root = getenv('PV_MODEL_REPOSITORY');
+if isempty(model_repository_root)
+    model_repository_root = fullfile( ...
+        fileparts(project_root), 'pv-simulink-fault-scenario-models');
+end
+
+if ~exist(model_repository_root, 'dir')
+    error([ ...
+        'Model repository not found:\n%s\n\n' ...
+        'Clone pv-simulink-fault-scenario-models next to this generator repository, ' ...
+        'or define PV_MODEL_REPOSITORY with its local path.'], ...
+        model_repository_root);
+end
+
+% Real meteorological data are local inputs and are intentionally not versioned
+% with this repository. By default they are expected under
+% ./real_meteorological_time_series. PV_METEO_DATA_ROOT can point elsewhere.
+meteo_root = getenv('PV_METEO_DATA_ROOT');
+if isempty(meteo_root)
+    meteo_root = fullfile(project_root, 'real_meteorological_time_series');
+end
+
 %% ========================================================
 % LOG FILE
 % =========================================================
@@ -72,8 +98,12 @@ fprintf('=================================================\n');
 % =========================================================
 
 dataset_folder_name = 'Real_Weather_PhysicsBased_PV_Fault_Datasets';
-models_root = fullfile(project_root, 'Models');
 output_root = fullfile(project_root, dataset_folder_name);
+simulink_work_root = fullfile(project_root, '.simulink_work');
+
+if ~exist(simulink_work_root, 'dir')
+    mkdir(simulink_work_root);
+end
 
 % Use true to run batches with parsim when the Parallel Computing Toolbox is available.
 force_parallel = true;
@@ -169,20 +199,27 @@ writeSemiSyntheticSourceDescription(output_root);
 % SOURCE METEOROLOGICAL DATASETS
 % =========================================================
 
-pamplona_source = resolveExistingPath(project_root, { ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Pamplona_Colombia'), ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Pamplona,Colombia'), ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Pamplona Colombia'), ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Pamplona') ...
+pamplona_source = resolveExistingPath(meteo_root, { ...
+    fullfile(meteo_root, 'Pamplona_Colombia'), ...
+    fullfile(meteo_root, 'Pamplona,Colombia'), ...
+    fullfile(meteo_root, 'Pamplona Colombia'), ...
+    fullfile(meteo_root, 'Pamplona') ...
 }, {'pamplona','colombia'});
 
-verney_source = resolveExistingPath(project_root, { ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Verney_Portugal'), ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Verney,Portugal'), ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Verney Portugal'), ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Verney'), ...
-    fullfile(project_root, 'real_meteorological_time_series', 'Portugal') ...
+verney_source = resolveExistingPath(meteo_root, { ...
+    fullfile(meteo_root, 'Verney_Portugal'), ...
+    fullfile(meteo_root, 'Verney,Portugal'), ...
+    fullfile(meteo_root, 'Verney Portugal'), ...
+    fullfile(meteo_root, 'Verney'), ...
+    fullfile(meteo_root, 'Portugal') ...
 }, {'verney','portugal'});
+
+if exist(pamplona_source, 'dir') ~= 7
+    error('Pamplona meteorological source folder not found under: %s', meteo_root);
+end
+if exist(verney_source, 'dir') ~= 7
+    error('Verney meteorological source folder not found under: %s', meteo_root);
+end
 
 meteo_dataset_files = {pamplona_source, verney_source};
 meteo_dataset_labels = {'Pamplona_Colombia', 'Verney_Portugal'};
@@ -193,6 +230,22 @@ meteo_dataset_labels = {'Pamplona_Colombia', 'Verney_Portugal'};
 %% ========================================================
 % SIMULINK MODELS ORGANIZATION
 % =========================================================
+
+models_root = fullfile(model_repository_root, 'Models');
+parameter_file = fullfile(model_repository_root, 'power_PVarray_250kW_param.m');
+
+if ~exist(models_root, 'dir')
+    error('Models folder not found in external model repository: %s', models_root);
+end
+if ~exist(parameter_file, 'file')
+    error('Common model parameter file not found: %s', parameter_file);
+end
+
+% Make the external repository visible to Simulink callbacks. Some models call
+% power_PVarray_250kW_param by name from PreLoadFcn.
+addpath(model_repository_root);
+addpath(models_root);
+rehash path;
 
 scenario_folder_map = containers.Map( ...
     {'F0','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11'}, ...
@@ -254,7 +307,7 @@ n_faults = numel(scenario_ids);
 % MODEL PARAMETERS
 % =========================================================
 
-run(fullfile(project_root, 'power_PVarray_250kW_param.m'));
+run(parameter_file);
 
 model_params = struct();
 model_params.Ts_Power = Ts_Power;
@@ -324,7 +377,9 @@ base.module_mismatch_choice = 'randomized';
 fprintf('\n=================================================\n');
 fprintf('GENERAL CONFIGURATION\n');
 fprintf('=================================================\n');
+fprintf('Model repository: %s\n', model_repository_root);
 fprintf('Models root folder: %s\n', models_root);
+fprintf('Meteorological data root: %s\n', meteo_root);
 fprintf('Dataset root: %s\n', output_root);
 fprintf('Data time step Ts_data: %.3f s\n', Ts_data);
 fprintf('Number of scenarios: %d\n', n_faults);
@@ -445,16 +500,22 @@ for dset_idx = 1:numel(meteo_database.datasets)
         fprintf('DATASET : %s | SCENARIO : %s - %s\n', dataset_label, scenario_id, scenario_label);
         fprintf('---------------------------------------------------------------\n');
 
-        model_folder = fullfile(models_root, scenario_folder_map(scenario_id));
         model_name = scenario_model_map(scenario_id);
-        model_file = fullfile(model_folder, [model_name '.slx']);
+        flat_model_file = fullfile(models_root, [model_name '.slx']);
+        legacy_model_file = fullfile(models_root, scenario_folder_map(scenario_id), [model_name '.slx']);
 
-        if ~exist(model_file, 'file')
-            error('Simulink model not found: %s', model_file);
+        if exist(flat_model_file, 'file')
+            model_file = flat_model_file;
+        elseif exist(legacy_model_file, 'file')
+            model_file = legacy_model_file;
+        else
+            error('Simulink model not found for %s. Expected under: %s', scenario_id, models_root);
         end
 
-        simulink_cache_dir   = fullfile(model_folder, 'simulink_cache');
-        simulink_codegen_dir = fullfile(model_folder, 'simulink_codegen');
+        model_folder = fileparts(model_file);
+        scenario_work_folder = fullfile(simulink_work_root, scenario_id);
+        simulink_cache_dir   = fullfile(scenario_work_folder, 'cache');
+        simulink_codegen_dir = fullfile(scenario_work_folder, 'codegen');
         if ~exist(simulink_cache_dir, 'dir'); mkdir(simulink_cache_dir); end
         if ~exist(simulink_codegen_dir, 'dir'); mkdir(simulink_codegen_dir); end
 
@@ -1362,7 +1423,7 @@ function y = getSignalData(sig)
     end
 end
 
-function resolved_path = resolveExistingPath(project_root, candidates, keywords)
+function resolved_path = resolveExistingPath(base_root, candidates, keywords)
     resolved_path = candidates{1};
     for i = 1:numel(candidates)
         candidate_i = candidates{i};
@@ -1372,7 +1433,7 @@ function resolved_path = resolveExistingPath(project_root, candidates, keywords)
         end
     end
     for i = 1:numel(candidates)
-        candidate_i = fullfile(project_root, candidates{i});
+        candidate_i = fullfile(base_root, candidates{i});
         if exist(candidate_i, 'dir') == 7 || exist(candidate_i, 'file') == 2
             resolved_path = candidate_i;
             return
@@ -1384,7 +1445,7 @@ function resolved_path = resolveExistingPath(project_root, candidates, keywords)
     % one of the requested keywords. This prevents skipping Verney only because
     % the local folder is named slightly differently.
     if nargin >= 3 && ~isempty(keywords)
-        base_folder = fullfile(project_root, 'real_meteorological_time_series');
+        base_folder = base_root;
         if exist(base_folder, 'dir') == 7
             listing = dir(fullfile(base_folder, '**'));
             keywords = lower(string(keywords));
@@ -2138,18 +2199,11 @@ function params = randomizeFaultSeverityTemplate(params, scenario_id)
         case 'F8'
             params.RF8 = randLogUniform(1, 1000);
         case 'F9'
-            levels = {'light', 'moderate', 'severe'};
-            selected_level = levels{randi(numel(levels))};
-            params.mismatch_level = selected_level;
-            switch selected_level
-                case 'light'
-                    candidates = {'SunPower SPR-410NE-WHT-D', 'SunPower SPR-400E-WHT-D'};
-                case 'moderate'
-                    candidates = {'SunPower SPR-390E-WHT-D', 'SunPower SPR-X22-370'};
-                case 'severe'
-                    candidates = {'SunPower SPR-X22-360', 'SunPower SPR-X22-360-COM'};
-            end
-            params.module_mismatch_choice = candidates{randi(numel(candidates))};
+            % The module mismatch is encoded directly in the F9 Simulink model.
+            % Do not report randomly selected module names that are not applied
+            % physically by the model.
+            params.mismatch_level = 'fixed_in_model';
+            params.module_mismatch_choice = 'configured_in_model';
         case 'F10'
             params.RF10 = randUniform(10, 100);
         case 'F11'
