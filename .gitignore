@@ -1,0 +1,28 @@
+# Generated dataset and runtime outputs
+Real_Weather_PhysicsBased_PV_Fault_Datasets/
+real_meteorological_time_series/
+.simulink_work/
+overnight_generation_log_*.txt
+
+# Simulink / MATLAB generated files
+slprj/
+*.slxc
+*.asv
+*.autosave
+*.log
+
+# External model files should remain in the dedicated model repository
+Models/
+power_PVarray_250kW_param.m
+*.slx
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
