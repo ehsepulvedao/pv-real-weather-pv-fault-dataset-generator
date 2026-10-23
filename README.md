@@ -81,7 +81,7 @@ The public defaults are defined near the beginning of `pv_fault_dataset_generato
 ```matlab
 force_parallel = true;
 max_simulations_per_batch = 5;
-n_fault_variants_per_scenario = 3;
+n_fault_variants_per_scenario = 5;
 max_real_meteo_days_per_dataset_to_use = Inf;
 scenarios_to_run = {'ALL'};
 Ts_data = 1;
@@ -163,6 +163,9 @@ H
 low_irradiance_flag
 ```
 
+`IR` and `T` are the environmental variables supplied to the photovoltaic simulation models.  
+`H`, when available in the source records, is resampled to the exported time grid and retained as contextual meteorological information; it is **not used as an input** by the photovoltaic simulation models.
+
 For most scenarios, two string-current channels are exported: one affected string and one simultaneously simulated healthy reference string. Positive- and negative-polarity signals are stored separately:
 
 ```text
@@ -231,18 +234,44 @@ The consolidation is streamed file by file so that the complete dataset does not
 7. Run `pv_fault_dataset_generator`.
 8. Optionally run `python build_pv_fault_dataset.py --overwrite` to create the single consolidated CSV.
 
+## Associated dataset and article
+
+The publication dataset generated with this workflow is deposited in **Recherche Data Gouv – CNRS Research Data**.
+
+**Dataset title:** *Real-weather-driven labelled photovoltaic fault-diagnosis time series from physics-based simulations*  
+**Reserved dataset DOI:** [https://doi.org/10.57745/FTAGKB](https://doi.org/10.57745/FTAGKB)
+
+The dataset DOI has been reserved by Recherche Data Gouv and will become active when the dataset is published after completion of the curation process.
+
+**Associated Data in Brief article:** *A labelled semi-synthetic photovoltaic fault diagnosis dataset driven by real meteorological data and physics-based simulations*  
+**Article DOI:** `[TO BE ADDED AFTER PUBLICATION]`
+
 ## Citation
 
-If you use this generator, please cite this repository and the associated data article when available.
+If you use this generator or the released data, please cite the software repository, the dataset record, and the associated Data in Brief article once the article DOI is available.
 
-Suggested repository citation:
+Suggested software repository citation:
 
 ```text
 E.H. Sepúlveda-Oviedo, PV Real-Weather Fault Dataset Generator, GitHub repository, 2026.
 https://github.com/ehsepulvedao/pv-real-weather-pv-fault-dataset-generator
 ```
 
-A machine-readable citation is provided in `CITATION.cff`.
+Dataset citation:
+
+```text
+E.H. Sepúlveda-Oviedo, Real-weather-driven labelled photovoltaic fault-diagnosis time series from physics-based simulations,
+Recherche Data Gouv, 2026. https://doi.org/10.57745/FTAGKB
+```
+
+Associated article:
+
+```text
+E.H. Sepúlveda-Oviedo, A labelled semi-synthetic photovoltaic fault diagnosis dataset driven by real meteorological data
+and physics-based simulations, Data in Brief, [YEAR], [ARTICLE DOI TO BE ADDED AFTER PUBLICATION].
+```
+
+A machine-readable software citation is provided in `CITATION.cff`.
 
 ## License
 
